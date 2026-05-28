@@ -13,7 +13,7 @@ A local CLI tool to find and copy working keys.
 
 ## 2. Vercel API Proxy (/vercel)
 A production-ready serverless API that you can deploy to Vercel.
-- **Endpoint:** `https://your-project.vercel.app/api/chat`
+- **Endpoint:** `https://free-api-eta.vercel.app/api/chat`
 - **Format:** OpenAI-compatible JSON.
 - **Features:**
   - **Smart Ranking:** Automatically prioritizes the best coding models (Claude 3.7/3.5, GPT-4o, etc.).
