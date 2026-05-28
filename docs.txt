@@ -1,0 +1,41 @@
+# Free-API Documentation
+
+A high-performance, self-healing LLM proxy and autochecker for free API keys.
+
+## 1. Interactive Autochecker (autochecker.py)
+A local CLI tool to find and copy working keys.
+- **Run:** `python3 autochecker.py`
+- **Features:** 
+  - Automatically pulls latest keys from remote.
+  - Interactive selection menu (use Arrow Keys).
+  - One-click copy to clipboard (Press Enter).
+  - Shows Model, Budget ($), and Rate Limit (RPM).
+
+## 2. Vercel API Proxy (/vercel)
+A production-ready serverless API that you can deploy to Vercel.
+- **Endpoint:** `https://your-project.vercel.app/api/chat`
+- **Format:** OpenAI-compatible JSON.
+- **Features:**
+  - **Smart Ranking:** Automatically prioritizes the best coding models (Claude 3.7/3.5, GPT-4o, etc.).
+  - **Live Discovery:** Fetches fresh keys from the source on every request.
+  - **Active Health Checks:** Probes keys in parallel before selection to ensure high uptime.
+  - **Auto-Failover:** If the #1 key fails, it instantly tries the #2 and #3 best models.
+  - **Streaming:** Full support for Server-Sent Events (SSE).
+
+## 3. Usage Example (cURL)
+```bash
+curl -X POST https://your-project.vercel.app/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [{"role": "user", "content": "Write a hello world in Python"}],
+    "stream": true
+  }'
+```
+
+## 4. Error Codes
+- **503 "nomodels"**: Returned if no text-based models are found in the source or if all health-checks failed.
+
+## 5. Deployment
+1. `cd vercel`
+2. `vercel deploy` (Requires Vercel CLI)
+3. Set "Root Directory" to `vercel` in Vercel Project Settings.
