@@ -1,0 +1,21 @@
+I have the `autochecker.py` tool ready. Please perform the following task:
+
+1. **Find the Smartest Coding Model:** 
+   Run `python3 autochecker.py` and identify the best coding model currently working. 
+   - Prioritize models in this order: `claude-3-7-sonnet`, `claude-3-5-sonnet`, `gpt-4o`, `deepseek-reasoner` (R1), or `deepseek-chat` (V3).
+   - Capture a working `sk-...` key for that model.
+
+2. **Create a Vercel API Proxy:**
+   Initialize a new Next.js project optimized for Vercel deployment. Create a serverless function at `/api/chat` that:
+   - Accepts standard OpenAI-compatible POST requests (messages, model, temperature, etc.).
+   - Proxies these requests to `https://aiapiv2.pekpik.com/v1/chat/completions`.
+   - Uses the captured `sk-...` key in the Authorization header.
+   - Forwards the streaming or non-streaming response back to the client.
+
+3. **Implementation Details:**
+   - Use `node-fetch` or native `fetch` in the Vercel function.
+   - Hardcode the selected "best" model as the default, but allow the user to override it in the request body.
+   - Include a basic `README.md` explaining how to call the new endpoint: `https://your-project.vercel.app/api/chat`.
+
+4. **Validation:**
+   Ensure the code is clean, handles errors (like expired keys), and is ready for `vercel deploy`.

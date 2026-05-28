@@ -1,0 +1,12 @@
+{
+  "name": "free-llm-proxy",
+  "version": "1.0.0",
+  "description": "OpenAI-compatible proxy for free LLM keys",
+  "main": "api/chat.js",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}

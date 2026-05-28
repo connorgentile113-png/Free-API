@@ -1,0 +1,121 @@
+sudo apt update && sudo apt install xclip -y && mkdir -p ~/Downloads/api && cat << 'EOF' > ~/Downloads/api/autochecker.py
+import re
+import requests
+import json
+import sys
+import os
+import subprocess
+import base64
+import time
+
+try:
+    import tty
+    import termios
+except ImportError:
+    tty = None
+    termios = None
+
+BASE_URL = "https://aiapiv2.pekpik.com/v1"
+README_URL = "https://raw.githubusercontent.com/alistaitsacle/free-llm-api-keys/main/README.md"
+
+def fetch_readme():
+    print(f"[*] Fetching latest README from {README_URL}...")
+    response = requests.get(README_URL)
+    response.raise_for_status()
+    return response.text
+
+def extract_keys_and_models(content):
+    print("[*] Extracting keys and metadata...")
+    pattern = r"\| `(sk-[a-zA-Z0-9]+)` \| ([a-zA-Z0-9.-]+) \| [^|]+ \| ([^|]+) \| ([^|]+) \|"
+    matches = re.findall(pattern, content)
+    unique_entries = []
+    seen = set()
+    for key, model, budget, rpm in matches:
+        if key not in seen:
+            unique_entries.append({"key": key, "model": model, "budget": budget.strip(), "rpm": rpm.strip()})
+            seen.add(key)
+    return unique_entries
+
+def check_key(key, model):
+    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+    payload = {"model": model, "messages": [{"role": "user", "content": "hi"}], "max_tokens": 1}
+    try:
+        response = requests.post(f"{BASE_URL}/chat/completions", headers=headers, data=json.dumps(payload), timeout=7)
+        return response.status_code == 200, response
+    except Exception as e:
+        return False, str(e)
+
+def copy_to_clipboard(text):
+    try:
+        if sys.platform == 'darwin':
+            subprocess.run(['pbcopy'], input=text.encode('utf-8'), check=True)
+            return True
+        elif sys.platform == 'linux':
+            try:
+                subprocess.run(['xclip', '-selection', 'clipboard'], input=text.encode('utf-8'), check=True, stderr=subprocess.DEVNULL)
+                return True
+            except:
+                try:
+                    subprocess.run(['xsel', '--clipboard', '--input'], input=text.encode('utf-8'), check=True, stderr=subprocess.DEVNULL)
+                    return True
+                except: pass
+        elif sys.platform == 'win32' or os.name == 'nt':
+            subprocess.run(['clip'], input=text.encode('utf-16'), check=True, shell=True)
+            return True
+    except: pass
+    try:
+        b64_text = base64.b64encode(text.encode('utf-8')).decode('utf-8')
+        sys.stdout.write(f"\033]52;c;{b64_text}\a")
+        sys.stdout.flush()
+        return True
+    except: return False
+
+def get_key_press():
+    if not tty or not termios: return sys.stdin.read(1)
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        ch = sys.stdin.read(1)
+        if ch == '\x1b': ch += sys.stdin.read(2)
+    finally: termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
+
+def interactive_menu(working_keys):
+    current_idx = 0
+    while True:
+        sys.stdout.write("\033[H\033[J")
+        print("="*60 + "\n🚀 WORKING KEYS! [Arrows] to select, [Enter] to copy, [Q] to quit.\n" + "="*60)
+        for i, k in enumerate(working_keys):
+            prefix = " > " if i == current_idx else "   "
+            line = f"{prefix} {k['model']:<20} | {k['budget']:<8} | {k['rpm']:<8} | {k['key'][:20]}..."
+            print(f"\033[46m\033[30m{line}\033[0m" if i == current_idx else line)
+        key = get_key_press()
+        if key == '\x1b[A': current_idx = (current_idx - 1) % len(working_keys)
+        elif key == '\x1b[B': current_idx = (current_idx + 1) % len(working_keys)
+        elif key in ('\r', '\n'):
+            selected_key = working_keys[current_idx]['key']
+            if copy_to_clipboard(selected_key):
+                print(f"\n✅ Copied: {selected_key}")
+                sys.exit(0)
+        elif key.lower() == 'q': sys.exit(0)
+
+def main():
+    try:
+        content = fetch_readme()
+        entries = extract_keys_and_models(content)
+        if not entries: return
+        print(f"[*] Checking {len(entries)} keys...")
+        working_keys = []
+        for entry in entries:
+            is_working, _ = check_key(entry["key"], entry["model"])
+            print(f"{'✅' if is_working else '❌'} {entry['key']:<50} | {entry['model']}")
+            if is_working: working_keys.append(entry)
+        if working_keys:
+            time.sleep(1)
+            interactive_menu(working_keys)
+    except Exception as e: print(f"[!] Error: {e}")
+
+if __name__ == "__main__":
+    main()
+EOF
