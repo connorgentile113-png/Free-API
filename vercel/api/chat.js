@@ -158,9 +158,13 @@ export default async function handler(req, res) {
                 if (stream) {
                     res.setHeader('Content-Type', 'text/event-stream');
                     res.setHeader('Cache-Control', 'no-cache');
+                    res.setHeader('X-Model-Used', selected.model);
+                    res.write(`data: ${JSON.stringify({ type: 'model', modelUsed: selected.model })}\n\n`);
                     response.body.pipe(res);
                 } else {
                     const data = await response.json();
+                    data.modelUsed = selected.model;
+                    data.model = data.model || selected.model;
                     return res.status(200).json(data);
                 }
                 return;
